@@ -45,16 +45,59 @@ export function parse(xml: string, withNS?: boolean): XmlDocument
     }
     // 解析声明头
     doc.declaration = declaration()
+    // 在解析内容前先将 CDATA 里影响解析的特殊字符替换掉
+    let m = xml.match(/<!\[CDATA\[[\s\S]*?\]\]>/gm)
+    // 如果有 CDATA
+    if (m) {
+        // 分别完成替换
+        for (let str of m) {
+            xml = xml.replace(str,encodeCDATA(str))
+        }
+    }
     // 解析 xml 数据
     let parsed = parseAll(xml)
     if (parsed) {
         if (parsed.children.length === 1 && typeof parsed.children[0] !== 'string') doc.root = parsed.children[0]
         else throw new Error('XML源码不符合规范：有不止1个根节点')
     }
-    // console.log(xml)
+
     // 添加命名空间
     if (doc.root && withNS === true) applyNS(doc.root)
     return doc
+
+    /**
+     * 对 CDATA 内容编码
+     * @param str 要编码的内容
+     * @returns 编码后的内容
+     */
+    function encodeCDATA(str:string) : string
+    {
+        let shadow = str
+            .split(`<![CDATA[`)[1].split(`]]>`)[0]
+            .replace(/</,`[_*[$(<)$]*_]`).replace(/>/,`[_*[$(>)$]*_]`).replace(/\//,`[_*[$(/)$]*_]`).replace(/\\/,`[_*[$(LS)$]*_]`)
+        return `<![CDATA[${shadow}]]>`
+    }
+
+    /**
+     * 对 CDATA 内容解码
+     * @param str 被编码的字符串
+     * @returns 解码后的内容
+     */
+    function decodeCDATA(str:string) : string
+    {
+        let m = str.match(/<!\[CDATA\[[\s\S]*?\]\]>/gm)
+        // 如果有 CDATA
+        if (m) {
+            // 分别完成替换
+            for (let cdata of m) {
+                let shadow = cdata
+                    .split(`<![CDATA[`)[1].split(`]]>`)[0]
+                    .replace(/\[_\*\[\$\(<\)\$\]\*\_]/,`<`).replace(/\[_\*\[\$\(>\)\$\]\*_]/,`>`).replace(/\[_\*\[\$\(\/\)\$\]\*_]/,`/`).replace(/\[_\*\[\$\(LS\)\$\]\*_]/,`\\`)
+                str = str.replace(cdata,`<![CDATA[${shadow}]]>`)
+            }
+        }
+        return str
+    }
 
     /**
      * 解析 xml 文件声明，解析完成后会从代码中删除
@@ -168,24 +211,31 @@ export function parse(xml: string, withNS?: boolean): XmlDocument
     {
         // 取属性
         getAttributes(strs['attrs'],node)
+        let str = strs['inner']
         // 判断内部是否还有子节点
         if (
-            strs['inner'].match(/<(?<tag>[\w:]+)([^<^>])*?\/>/m)
+            str.match(/<(?<tag>[\w:]+)([^<^>])*?\/>/m)
             ||
-            strs['inner'].match(/<(?<tag>[\w:]+)[\s\S]*?>[\s\S]*?<\/\k<tag>*?>/m)
+            str.match(/<(?<tag>[\w:]+)[\s\S]*?>[\s\S]*?<\/\k<tag>*?>/m)
         ) {
             // 有子节点则要考虑可能同时含有 content 和 children 的情况
-            let res = parseAll(strs['inner'])
+            let res = parseAll(str)
             if (res) {
                 // 取出子节点
                 if (res.children && res.children.length > 0) node.children = res.children
                 // 如果有剩余内容就是 content
-                if (res.strLeft !== '') node.content = res.strLeft
+                if (res.strLeft !== '') {
+                    res.strLeft = res.strLeft.replace(/[\r\n]/g,'').trim()
+                    node.content = decodeCDATA(res.strLeft)
+                }
             }
         }
         else {
             // 没有子节点直接作为 content
-            node.content = strs['inner']
+            if (str !== '') {
+                str = str.replace(/[\r\n]/g,'').trim()
+                node.content = decodeCDATA(str)
+            }
         }
     }
 
