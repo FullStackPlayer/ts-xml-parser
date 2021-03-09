@@ -7,6 +7,8 @@ Import:
 ~~~ts
 // remote import in Deno
 import parse from "https://denopkg.com/FullStackPlayer/ts-xml-parser/parser.ts"
+// latest update: now you can import from deno.land
+import parse from "https://deno.land/x/ts_xml_parser/parser.ts"
 // local import in Deno
 import parse from "path/to/parser.ts"
 ~~~
@@ -185,8 +187,8 @@ let parsed = parse(xml)
 
 # ATTENTION
 
-- If you have single `\` characters in `<![CDATA[]>`, it will be ignored as an `escape character`, if this is necessary, type `\\` instead.
+- If you have single `\` characters in `<![CDATA[]>`, it will be ignored as an `escape character`, if you are sure a single `\` is necessary, type `\\` instead.
 
-- `<![CDATA[]>` can not be nested in a node content, if you indeed want to do that, encode your inner `<![CDATA[]>` first, of course the receiver side should decode the content either.
+- `<![CDATA[]]>` can not be nested in a node content, if you really want to do that, encode your inner `<![CDATA[]]>` first, of course the receiver side should decode the content either.
 
 ## Enjoy Yourself!
