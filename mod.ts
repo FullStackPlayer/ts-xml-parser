@@ -1,1 +1,1 @@
-export * from './parser.ts'
+export * from './src/parser.ts'

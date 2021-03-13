@@ -1,17 +1,38 @@
 # ts-xml-parser
-A better xml parser written in pure typescript and works well with deno.
+A better xml parser written in pure typescript and works well with both node and deno.
 
-# Usage
+# Import to your project
 
-Import:
+### For Node.js
+Install it first:
+~~~bash
+// pay attention to the package name 'fsp-xml-parser'
+npm install fsp-xml-parser
+// or
+yarn add fsp-xml-parser
+~~~
+
+Then import it:
+~~~js
+// CommonJS
+const { parse } = require('fsp-xml-parser')
+// ES Module
+// In nodejs, you need bundlers(such as webpack/parcel...) support for now, this line of code couldn't run in nodejs directly.
+// But if typescript is your good friend, this is the right way.
+import { parse } from 'fsp-xml-parser'
+~~~
+
+### For Deno
 ~~~ts
 // remote import in Deno
-import parse from "https://denopkg.com/FullStackPlayer/ts-xml-parser/parser.ts"
+import parse from "https://denopkg.com/FullStackPlayer/ts-xml-parser/mod.ts"
 // latest update: now you can import from deno.land
-import parse from "https://deno.land/x/ts_xml_parser/parser.ts"
+import parse from "https://deno.land/x/ts_xml_parser/mod.ts"
 // local import in Deno
 import parse from "path/to/parser.ts"
 ~~~
+
+# Usage
 
 Simple:
 ~~~ts

@@ -1,0 +1,38 @@
+{
+    "name": "fsp-xml-parser",
+    "version": "1.0.0",
+    "description": "A better xml parser written in pure typescript and works well with both node and deno.",
+    "main": "./dist/cjs/parser.js",
+    "module": "./dist/esm/parser.js",
+    "typings": "./dist/cjs/parser.d.ts",
+    "scripts": {
+      "build:cjs": "tsc -p tsconfig.json",
+      "build:esm": "tsc -p tsconfig-esm.json",
+      "build:all": "yarn build:cjs && yarn build:esm",
+      "pretest:cjs": "yarn build:all",
+      "test:cjs": "jest ./test/cjs.test.js",
+      "test:deno": "deno test -A ./test/deno.test.ts",
+      "test:all": "yarn test:cjs && yarn test:deno"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/FullStackPlayer/ts-xml-parser.git"
+    },
+    "keywords": [
+      "typescript",
+      "xml",
+      "parser"
+    ],
+    "author": "FullStackPlayer",
+    "license": "GPL-3.0",
+    "homepage": "https://github.com/FullStackPlayer/ts-xml-parser",
+    "dependencies": {},
+    "devDependencies": {
+      "jest": "^26.6.3"
+    },
+    "files": [
+      "/dist",
+      "/test"
+    ]
+  }
+  

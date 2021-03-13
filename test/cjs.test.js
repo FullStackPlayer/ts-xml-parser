@@ -1,7 +1,125 @@
-import { assertEquals, assertThrows } from "https://deno.land/std@0.89.0/testing/asserts.ts"
-import { parse } from '../parser.ts'
+const { parse } = require('../dist/cjs/parser.js')
 
-Deno.test('Child Element', ()=>{
+test('Empty String', ()=>{
+    let xml = ``
+    let parsed = parse(xml)
+    expect(parsed.declaration).toEqual(undefined)
+    expect(parsed.root).toEqual(undefined)
+})
+
+test('Only Declaration', ()=>{
+    let xml = `
+    <?xml version="1.0" encoding="utf-8" ?> 
+    `
+    let parsed = parse(xml)
+    expect(parsed.declaration).toEqual({
+        attributes: {
+            version: '1.0',
+            encoding: 'utf-8'
+        }
+    })
+    expect(parsed.root).toEqual(undefined)
+})
+
+test('Only Element', ()=>{
+    let xml = `
+    <tagA></tagA>
+    `
+    let parsed = parse(xml)
+    expect(parsed.root).toEqual({
+        name: 'tagA'
+    })
+    expect(parsed.declaration).toEqual(undefined)
+})
+
+test('Multiple Elements', ()=>{
+    let xml = `
+    <tagA></tagA>
+    <tagB></tagB>
+    `
+    try {
+        parse(xml)
+    }
+    catch(err) {
+        expect(err).toEqual(new Error('XML源码不符合规范：有不止1个根节点'))
+    }
+})
+
+test('Self Close Element', ()=>{
+    let xml = `
+    <tagA/>
+    `
+    let parsed = parse(xml)
+    expect(parsed.root).toEqual({
+        name: 'tagA'
+    })
+    xml = `
+    <tagA />
+    `
+    parsed = parse(xml)
+    expect(parsed.root).toEqual({
+        name: 'tagA'
+    })
+    xml = `
+    <tagA xmlns="DAV:" />
+    `
+    parsed = parse(xml)
+    expect(parsed.root).toEqual({
+        name: 'tagA',
+        attributes: {
+            'xmlns': 'DAV:'
+        }
+    })
+})
+
+test('Open And Close Pairs', ()=>{
+    let xml = `
+    <tagA></tagA>
+    `
+    let parsed = parse(xml)
+    expect(parsed.root).toEqual({
+        name: 'tagA'
+    })
+    xml = `
+    <tagA>
+    something
+    </tagA>
+    `
+    parsed = parse(xml)
+    expect(parsed.root).toEqual({
+        name: 'tagA',
+        content: 'something'
+    })
+    xml = `
+    <tagA xmlns="DAV:" >
+    something
+    </tagA>
+    `
+    parsed = parse(xml)
+    expect(parsed.root).toEqual({
+        name: 'tagA',
+        content: 'something',
+        attributes: {
+            'xmlns': 'DAV:'
+        }
+    })
+})
+
+test('CDATA content', ()=>{
+    let xml = `
+    <tagA>
+    <![CDATA[123一二三]]>
+    </tagA>
+    `
+    let parsed = parse(xml)
+    expect(parsed.root).toEqual({
+        name: 'tagA',
+        content: '<![CDATA[123一二三]]>'
+    })
+})
+
+
+test('Child Element', ()=>{
     let xml = `
     <?xml version="1.0" encoding="utf-8" ?>
     <D:propfind xmlns:D="DAV:">
@@ -9,13 +127,13 @@ Deno.test('Child Element', ()=>{
     </D:propfind>
     `
     let parsed = parse(xml)
-    assertEquals(parsed.root?.name, 'D:propfind')
-    assertEquals(parsed.root?.children,[{
+    expect(parsed.root?.name).toEqual('D:propfind')
+    expect(parsed.root?.children).toEqual([{
         name: 'D:allprop'
     }])
 })
 
-Deno.test('Multiple Child Elements', ()=>{
+test('Multiple Child Elements', ()=>{
     let xml = `
     <?xml version="1.0" encoding="utf-8" ?>
     <parent>
@@ -24,7 +142,7 @@ Deno.test('Multiple Child Elements', ()=>{
     </parent>
     `
     let parsed = parse(xml)
-    assertEquals(parsed.root?.children?.length,2)
+    expect(parsed.root?.children?.length).toEqual(2)
     xml = `
     <?xml version="1.0" encoding="utf-8" ?>
     <parent>
@@ -34,10 +152,10 @@ Deno.test('Multiple Child Elements', ()=>{
     </parent>
     `
     parsed = parse(xml)
-    assertEquals(parsed.root?.children?.length,3)
+    expect(parsed.root?.children?.length).toEqual(3)
 })
 
-Deno.test('Global Namespace', ()=>{
+test('Global Namespace', ()=>{
     let xml = `
     <?xml version="1.0" encoding="utf-8" ?>
     <propfind xmlns="DAV:">
@@ -45,13 +163,13 @@ Deno.test('Global Namespace', ()=>{
     </propfind>
     `
     let parsed = parse(xml,true)
-    assertEquals(parsed.root?.name, 'DAV:propfind')
-    assertEquals(parsed.root?.children,[{
+    expect(parsed.root?.name).toEqual('DAV:propfind')
+    expect(parsed.root?.children).toEqual([{
         name: 'DAV:allprop'
     }])
 })
 
-Deno.test('Named Namespace', ()=>{
+test('Named Namespace', ()=>{
     let xml = `
     <?xml version="1.0" encoding="utf-8" ?>
     <D:propfind xmlns:D="DAV:" xmlns:R="RES:">
@@ -59,13 +177,13 @@ Deno.test('Named Namespace', ()=>{
     </D:propfind>
     `
     let parsed = parse(xml,true)
-    assertEquals(parsed.root?.name, 'DAV:propfind')
-    assertEquals(parsed.root?.children,[{
+    expect(parsed.root?.name).toEqual('DAV:propfind')
+    expect(parsed.root?.children).toEqual([{
         name: 'RES:allprop'
     }])
 })
 
-Deno.test('Mixed Namespace', ()=>{
+test('Mixed Namespace', ()=>{
     let xml = `
     <?xml version="1.0" encoding="utf-8" ?>
     <propfind xmlns="DAV:" xmlns:R="RES:">
@@ -73,13 +191,13 @@ Deno.test('Mixed Namespace', ()=>{
     </propfind>
     `
     let parsed = parse(xml,true)
-    assertEquals(parsed.root?.name, 'DAV:propfind')
-    assertEquals(parsed.root?.children,[{
+    expect(parsed.root?.name).toEqual('DAV:propfind')
+    expect(parsed.root?.children).toEqual([{
         name: 'RES:allprop'
     }])
 })
 
-Deno.test('Mixed Content', ()=>{
+test('Mixed Content', ()=>{
     let xml = `
     <?xml version="1.0" encoding="utf-8" ?>
     <father>
@@ -87,37 +205,37 @@ Deno.test('Mixed Content', ()=>{
     </father>
     `
     let parsed = parse(xml)
-    assertEquals(parsed.root?.children,[{
+    expect(parsed.root?.children).toEqual([{
         name: 'fullname',
         content: 'Johnson'
     }])
-    assertEquals(parsed.root?.content,'I have a son named John.')
+    expect(parsed.root?.content).toEqual('I have a son named John.')
 })
 
-Deno.test('Special CDATA Inner Text', ()=>{
+test('Special CDATA Inner Text', ()=>{
     let xml = `
     <?xml version="1.0" encoding="utf-8" ?>
     <Henan><![CDATA[<efg>!*#<"'></Henan>]]></Henan>
     `
     let parsed = parse(xml)
-    assertEquals(parsed.root?.content,`<![CDATA[<efg>!*#<"'></Henan>]]>`)
+    expect(parsed.root?.content).toEqual(`<![CDATA[<efg>!*#<"'></Henan>]]>`)
     // 注意字符串里的单个 \ 会被视作转义符，编码解码后会消失
     xml = `
     <?xml version="1.0" encoding="utf-8" ?>
     <Henan><![CDATA[<efg>!*#\<"'></Henan>]]></Henan>
     `
     parsed = parse(xml)
-    assertEquals(parsed.root?.content,`<![CDATA[<efg>!*#<"'></Henan>]]>`)
+    expect(parsed.root?.content).toEqual(`<![CDATA[<efg>!*#<"'></Henan>]]>`)
     // 如果需要保存单个 \ ，那么要在字符串里写 \\
     xml = `
     <?xml version="1.0" encoding="utf-8" ?>
     <Henan><![CDATA[<efg>!*#\\<"'></Henan>]]></Henan>
     `
     parsed = parse(xml)
-    assertEquals(parsed.root?.content,`<![CDATA[<efg>!*#\\<"'></Henan>]]>`)
+    expect(parsed.root?.content).toEqual(`<![CDATA[<efg>!*#\\<"'></Henan>]]>`)
 })
 
-Deno.test('Deep Structure', ()=>{
+test('Deep Structure', ()=>{
     let xml = `
     <?xml version="1.0" encoding="utf-8" ?>
     <China>
@@ -133,7 +251,7 @@ Deno.test('Deep Structure', ()=>{
     </China>
     `
     let parsed = parse(xml)
-    assertEquals(parsed,{
+    expect(parsed).toEqual({
         "declaration": {
             "attributes": {
                 "version": "1.0",
