@@ -25,11 +25,11 @@ import { parse } from 'fsp-xml-parser'
 ### For Deno
 ~~~ts
 // remote import in Deno
-import parse from "https://denopkg.com/FullStackPlayer/ts-xml-parser/mod.ts"
+import { parse } from "https://denopkg.com/FullStackPlayer/ts-xml-parser/mod.ts"
 // latest update: now you can import from deno.land
-import parse from "https://deno.land/x/ts_xml_parser/mod.ts"
+import { parse } from "https://deno.land/x/ts_xml_parser/mod.ts"
 // local import in Deno
-import parse from "path/to/parser.ts"
+import { parse } from "path/to/parser.ts"
 ~~~
 
 # Usage

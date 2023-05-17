@@ -213,6 +213,27 @@ Deno.test('Mixed Content', ()=>{
     assertEquals(parsed.root?.content,'I have a son named John.')
 })
 
+Deno.test("Mixed Content, tag at the beginning", () => {
+  let xml = `
+    <?xml version="1.0" encoding="utf-8" ?>
+    <father>
+        <span>I</span> have a son named John<fullname>Johnson</fullname>.
+    </father>
+    `;
+  let parsed = parse(xml);
+  assertEquals(parsed.root?.children, [
+    {
+      name: "span",
+      content: "I",
+    },
+    {
+      name: "fullname",
+      content: "Johnson",
+    },
+  ]);
+  assertEquals(parsed.root?.content, "I have a son named John.");
+});
+
 Deno.test('Special CDATA Inner Text', ()=>{
     let xml = `
     <?xml version="1.0" encoding="utf-8" ?>
